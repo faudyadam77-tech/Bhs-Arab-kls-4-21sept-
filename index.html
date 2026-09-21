@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🐍 Game Ular Kosakata Arab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* ===== LOGIN SCREEN ===== */
+        .login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .login-screen h1 {
+            font-size: clamp(24px, 5vw, 42px);
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .login-screen .subtitle {
+            color: #e0e0e0;
+            font-size: clamp(14px, 3vw, 18px);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-screen .snake-mascot {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .login-box input:focus {
+            border-color: #764ba2;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.5);
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: #667eea;
+        }
+
+        /* ===== GAME SCREEN ===== */
+        .game-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .game-screen.active {
+            display: flex;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+
+        .top-bar .word-display {
+            background: white;
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: clamp(16px, 3.5vw, 24px);
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            flex: 1;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .top-bar .stat {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: clamp(12px, 2.5vw, 16px);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* Game Arena */
+        .game-arena {
+            flex: 0 0 45vh;
+            position: relative;
+            background: #1a472a;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(76,175,80,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(76,175,80,0.1) 0%, transparent 50%);
+            overflow: hidden;
+            border-bottom: 4px solid #2e7d32;
+            max-height: 400px;
+        }
+
+        .arena-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Snake */
+        .snake-segment {
+            position: absolute;
+            border-radius: 50%;
+            transition: none;
+            z-index: 10;
+        }
+
+        .snake-head {
+            z-index: 20;
+            border-radius: 40% 40% 35% 35%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 15px rgba(76,175,80,0.6);
+        }
+
+        .snake-head .eyes {
+            position: absolute;
+            top: 25%;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 15%;
+        }
+
+        .snake-head .eye {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .snake-head .eye::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #333;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+        }
+
+        .snake-head .tongue {
+            position: absolute;
+            bottom: -8px;
+            width: 3px;
+            height: 10px;
+            background: #e53935;
+            border-radius: 0 0 2px 2px;
+            animation: flicker 0.3s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% { height: 8px; }
+            100% { height: 12px; }
+        }
+
+        /* Arabic Options */
+        .arabic-option {
+            position: absolute;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #fff8e1, #ffecb3);
+            border: 3px solid #ff9800;
+            border-radius: 12px;
+            font-size: clamp(16px, 3.5vw, 24px);
+            font-weight: bold;
+            color: #333;
+            z-index: 5;
+            box-shadow: 0 4px 15px rgba(255,152,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 70px;
+            min-height: 50px;
+            text-align: center;
+        }
+
+        .arabic-option.correct-flash {
+            background: linear-gradient(135deg, #c8e6c9, #81c784) !important;
+            border-color: #4caf50 !important;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .arabic-option.wrong-flash {
+            background: linear-gradient(135deg, #ffcdd2, #e57373) !important;
+            border-color: #f44336 !important;
+            animation: wrongShake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* ===== CONTROLLER AREA ===== */
+        .controller-area {
+            flex: 1;
+            background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .joystick-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .joystick-label {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .joystick {
+            width: 140px;
+            height: 140px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.2);
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .joystick-knob {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: none;
+        }
+
+        .joystick-arrows {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            pointer-events: none;
+        }
+
+        .joystick-arrows .row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .joystick-arrows .arrow {
+            color: rgba(255,255,255,0.4);
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .dir-buttons-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dir-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 55px);
+            grid-template-rows: repeat(3, 55px);
+            gap: 6px;
+        }
+
+        .dir-btn {
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            transition: background 0.1s, transform 0.1s;
+        }
+
+        .dir-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+
+        .dir-btn.empty {
+            background: transparent;
+            border: none;
+        }
+
+        /* Feedback overlay */
+        .feedback-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            pointer-events: none;
+        }
+
+        .feedback-overlay.show {
+            display: flex;
+            animation: feedbackPop 1.5s ease forwards;
+        }
+
+        .feedback-overlay .feedback-text {
+            font-size: clamp(36px, 8vw, 70px);
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .feedback-overlay .feedback-sub {
+            font-size: clamp(14px, 3vw, 20px);
+            color: white;
+            margin-top: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+
+        .feedback-overlay.correct .feedback-text {
+            color: #4caf50;
+        }
+
+        .feedback-overlay.wrong .feedback-text {
+            color: #f44336;
+        }
+
+        @keyframes feedbackPop {
+            0% { transform: scale(0); opacity: 0; }
+            20% { transform: scale(1.2); opacity: 1; }
+            70% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+            transition: width 0.5s ease;
+            z-index: 50;
+        }
+
+        /* ===== RESULT SCREEN ===== */
+        .result-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .result-screen.active {
+            display: flex;
+        }
+
+        .result-screen h1 {
+            font-size: clamp(28px, 6vw, 48px);
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .result-card .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .result-card .score-circle.perfect {
+            background: linear-gradient(135deg, #4caf50, #81c784);
+        }
+
+        .result-card .score-circle.good {
+            background: linear-gradient(135deg, #ff9800, #ffb74d);
+        }
+
+        .result-card .score-circle.low {
+            background: linear-gradient(135deg, #f44336, #e57373);
+        }
+
+        .result-card .score-label {
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .result-card .student-name {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .result-card .message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .result-card .detail {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .result-card button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .result-card button:hover {
+            transform: translateY(-2px);
+        }
+
+        .sending-indicator {
+            color: #667eea;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .game-arena {
+                flex: 0 0 40vh;
+            }
+            .controller-area {
+                padding: 15px 10px;
+                gap: 15px;
+            }
+            .joystick {
+                width: 120px;
+                height: 120px;
+            }
+            .joystick-knob {
+                width: 48px;
+                height: 48px;
+            }
+            .dir-buttons {
+                grid-template-columns: repeat(3, 48px);
+                grid-template-rows: repeat(3, 48px);
+            }
+        }
+
+        @media (max-height: 600px) {
+            .game-arena {
+                flex: 0 0 35vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="snake-mascot">🐍</div>
+    <h1>Game Ular Kosakata Arab</h1>
+    <p class="subtitle">Arahkan ular ke jawaban yang benar!</p>
+    <div class="login-box">
+        <input type="text" id="studentName" placeholder="👤 Masukkan nama kamu" autocomplete="off">
+        <button onclick="startGame()">🎮 Mulai Bermain</button>
+        <div class="instructions">
+            <strong>📋 Cara Bermain:</strong><br>
+            • Ular akan bergerak terus menerus<br>
+            • Gunakan <strong>Arrow Keys</strong> (⬆️⬇️⬅️️) atau <strong>Joystick/Tombol</strong> untuk mengarahkan<br>
+            • Arahkan ular ke kosakata Arab yang artinya sesuai kata di atas<br>
+            • <strong>8 kesempatan</strong> untuk menjawab 8 soal<br>
+            • Jika salah, permainan tetap lanjut ke soal berikutnya!<br>
+            • Jawab semua benar = Nilai 100! 🌟
+        </div>
+    </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="game-screen" id="gameScreen">
+    <div class="top-bar">
+        <div class="stat" id="roundDisplay">📝 Ronde: 1/8</div>
+        <div class="word-display" id="indonesianWord">Penjual</div>
+        <div class="stat" id="scoreDisplay">⭐ Skor: 0</div>
+    </div>
+    
+    <div class="game-arena" id="gameArena">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        <div class="arena-grid"></div>
+    </div>
+
+    <!-- Controller Area -->
+    <div class="controller-area">
+        <!-- Joystick -->
+        <div class="joystick-container">
+            <div class="joystick-label">🕹️ Joystick</div>
+            <div class="joystick" id="joystick">
+                <div class="joystick-knob" id="joystickKnob"></div>
+                <div class="joystick-arrows">
+                    <div class="arrow">▲</div>
+                    <div class="row">
+                        <div class="arrow">◄</div>
+                        <div class="arrow">►</div>
+                    </div>
+                    <div class="arrow">▼</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction Buttons -->
+        <div class="dir-buttons-container">
+            <div class="joystick-label">🎯 Tombol Arah</div>
+            <div class="dir-buttons">
+                <div class="dir-btn empty"></div>
+                <div class="dir-btn" data-dir="up">▲</div>
+                <div class="dir-btn empty"></div>
+                <div class="dir-btn" data-dir="left"></div>
+                <div class="dir-btn empty"></div>
+                <div class="dir-btn" data-dir="right">►</div>
+                <div class="dir-btn empty"></div>
+                <div class="dir-btn" data-dir="down">▼</div>
+                <div class="dir-btn empty"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FEEDBACK OVERLAY -->
+<div class="feedback-overlay" id="feedbackOverlay">
+    <div class="feedback-text" id="feedbackText"></div>
+    <div class="feedback-sub" id="feedbackSub"></div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="result-screen" id="resultScreen">
+    <h1>🎉 Permainan Selesai!</h1>
+    <div class="result-card">
+        <div class="score-circle" id="scoreCircle">
+            <span id="finalScore">0</span>
+            <span class="score-label">NILAI</span>
+        </div>
+        <div class="student-name" id="resultName">-</div>
+        <div class="message" id="resultMessage">-</div>
+        <div class="detail" id="resultDetail">-</div>
+        <div class="sending-indicator" id="sendingIndicator">📤 Mengirim nilai...</div>
+        <button onclick="resetGame()">🔄 Main Lagi</button>
+    </div>
+</div>
+
+<script>
+// ===== KOSAKATA =====
+const vocabulary = [
+    { indonesian: 'Penjual (L)', arabic: 'بَائِعٌ' },
+    { indonesian: 'Petugas Kebersihan (L)', arabic: 'كَنَّاسٌ' },
+    { indonesian: 'Satpam/Penjaga (L)', arabic: 'بَوَّابٌ' },
+    { indonesian: 'Kepala Sekolah', arabic: 'رَئِيسُ الْمَدْرَسَةِ' },
+    { indonesian: 'Penjual (P)', arabic: 'بَائِعَةٌ' },
+    { indonesian: 'Petugas Kebersihan (P)', arabic: 'كَنَّاسَةٌ' },
+    { indonesian: 'Satpam/Penjaga (P)', arabic: 'حَارِسَةٌ' },
+    { indonesian: 'Pustakawan', arabic: 'أَمِينُ الْمَكْتَبَةِ' }
+];
+
+// ===== GAME STATE =====
+let currentRound = 0;
+let score = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let studentName = '';
+let gameActive = false;
+let currentQuestion = null;
+let animationId = null;
+let isProcessing = false; // Mencegah double collision
+
+// Snake state
+const SEGMENT_SIZE = 22;
+const SNAKE_LENGTH = 8;
+const BASE_SPEED = 3;
+let snake = [];
+let direction = { x: 1, y: 0 };
+let nextDirection = { x: 1, y: 0 };
+let speed = BASE_SPEED;
+
+// Google Apps Script URL - GANTI DENGAN URL ANDA
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+
+// ===== START GAME =====
+function startGame() {
+    studentName = document.getElementById('studentName').value.trim();
+    if (!studentName) {
+        alert('⚠️ Silakan masukkan nama terlebih dahulu!');
+        return;
+    }
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('gameScreen').classList.add('active');
+    
+    currentRound = 0;
+    score = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    gameActive = true;
+    isProcessing = false;
+    
+    initSnake();
+    nextRound();
+    gameLoop();
+}
+
+// ===== INIT SNAKE =====
+function initSnake() {
+    const arena = document.getElementById('gameArena');
+    const oldSegments = arena.querySelectorAll('.snake-segment');
+    oldSegments.forEach(s => s.remove());
+
+    snake = [];
+    const centerX = arena.offsetWidth / 2;
+    const centerY = arena.offsetHeight / 2;
+
+    for (let i = 0; i < SNAKE_LENGTH; i++) {
+        const segment = document.createElement('div');
+        segment.className = 'snake-segment';
+        
+        const size = SEGMENT_SIZE - (i * 1.5);
+        segment.style.width = size + 'px';
+        segment.style.height = size + 'px';
+        
+        if (i === 0) {
+            segment.classList.add('snake-head');
+            segment.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+            segment.innerHTML = `
+                <div class="eyes">
+                    <div class="eye"></div>
+                    <div class="eye"></div>
+                </div>
+                <div class="tongue"></div>
+            `;
+        } else {
+            const green = Math.max(100, 180 - i * 10);
+            segment.style.background = `rgb(${60 + i * 5}, ${green}, ${60 + i * 3})`;
+            segment.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+        }
+
+        segment.style.left = (centerX - i * (SEGMENT_SIZE - 2)) + 'px';
+        segment.style.top = centerY + 'px';
+        arena.appendChild(segment);
+
+        snake.push({
+            element: segment,
+            x: centerX - i * (SEGMENT_SIZE - 2),
+            y: centerY
+        });
+    }
+
+    direction = { x: 1, y: 0 };
+    nextDirection = { x: 1, y: 0 };
+}
+
+// ===== NEXT ROUND =====
+function nextRound() {
+    if (currentRound >= 8) {
+        endGame();
+        return;
+    }
+
+    currentRound++;
+    isProcessing = false;
+    
+    document.getElementById('roundDisplay').textContent = `📝 Ronde: ${currentRound}/8`;
+    document.getElementById('scoreDisplay').textContent = `⭐ Skor: ${Math.round(score)}`;
+    
+    // Update progress bar
+    const progress = ((currentRound - 1) / 8) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+
+    // Pilih soal acak yang belum terpakai (jika memungkinkan)
+    const shuffled = [...vocabulary].sort(() => Math.random() - 0.5);
+    currentQuestion = shuffled[0];
+    document.getElementById('indonesianWord').textContent = currentQuestion.indonesian;
+
+    // Reset posisi ular ke tengah
+    const arena = document.getElementById('gameArena');
+    const centerX = arena.offsetWidth / 2;
+    const centerY = arena.offsetHeight / 2;
+    
+    for (let i = 0; i < snake.length; i++) {
+        snake[i].x = centerX - i * (SEGMENT_SIZE - 2);
+        snake[i].y = centerY;
+    }
+    direction = { x: 1, y: 0 };
+    nextDirection = { x: 1, y: 0 };
+
+    // Buat 4 pilihan jawaban
+    createOptions(currentQuestion);
+}
+
+// ===== CREATE OPTIONS =====
+function createOptions(correctQuestion) {
+    const arena = document.getElementById('gameArena');
+    const oldOptions = arena.querySelectorAll('.arabic-option');
+    oldOptions.forEach(opt => opt.remove());
+
+    const wrongAnswers = vocabulary
+        .filter(v => v.arabic !== correctQuestion.arabic)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+    const allOptions = [correctQuestion, ...wrongAnswers].sort(() => Math.random() - 0.5);
+
+    const arenaW = arena.offsetWidth;
+    const arenaH = arena.offsetHeight;
+    const padding = 50;
+
+    const positions = [
+        { x: padding, y: padding },
+        { x: arenaW - padding - 100, y: padding },
+        { x: padding, y: arenaH - padding - 70 },
+        { x: arenaW - padding - 100, y: arenaH - padding - 70 }
+    ];
+
+    allOptions.forEach((option, index) => {
+        const div = document.createElement('div');
+        div.className = 'arabic-option';
+        div.textContent = option.arabic;
+        div.style.left = positions[index].x + 'px';
+        div.style.top = positions[index].y + 'px';
+        div.dataset.arabic = option.arabic;
+        div.dataset.correct = (option.arabic === correctQuestion.arabic) ? 'true' : 'false';
+        arena.appendChild(div);
+    });
+}
+
+// ===== GAME LOOP =====
+function gameLoop() {
+    if (!gameActive) return;
+    updateSnake();
+    checkCollisions();
+    animationId = requestAnimationFrame(gameLoop);
+}
+
+// ===== UPDATE SNAKE =====
+function updateSnake() {
+    direction = { ...nextDirection };
+    const arena = document.getElementById('gameArena');
+    const maxX = arena.offsetWidth - SEGMENT_SIZE;
+    const maxY = arena.offsetHeight - SEGMENT_SIZE;
+
+    let newHeadX = snake[0].x + direction.x * speed;
+    let newHeadY = snake[0].y + direction.y * speed;
+
+    if (newHeadX <= 0 || newHeadX >= maxX) {
+        direction.x *= -1;
+        nextDirection.x *= -1;
+        newHeadX = snake[0].x + direction.x * speed;
+    }
+    if (newHeadY <= 0 || newHeadY >= maxY) {
+        direction.y *= -1;
+        nextDirection.y *= -1;
+        newHeadY = snake[0].y + direction.y * speed;
+    }
+
+    newHeadX = Math.max(0, Math.min(newHeadX, maxX));
+    newHeadY = Math.max(0, Math.min(newHeadY, maxY));
+
+    for (let i = snake.length - 1; i > 0; i--) {
+        const prev = snake[i - 1];
+        const curr = snake[i];
+        const dx = prev.x - curr.x;
+        const dy = prev.y - curr.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const targetDist = SEGMENT_SIZE - 4;
+        
+        if (dist > targetDist) {
+            const ratio = (dist - targetDist) / dist;
+            curr.x += dx * ratio * 0.5;
+            curr.y += dy * ratio * 0.5;
+        }
+    }
+
+    snake[0].x = newHeadX;
+    snake[0].y = newHeadY;
+
+    for (let i = 0; i < snake.length; i++) {
+        const size = SEGMENT_SIZE - (i * 1.5);
+        snake[i].element.style.width = size + 'px';
+        snake[i].element.style.height = size + 'px';
+        snake[i].element.style.left = snake[i].x + 'px';
+        snake[i].element.style.top = snake[i].y + 'px';
+    }
+
+    const head = snake[0].element;
+    let rotation = 0;
+    if (direction.x === 1) rotation = 0;
+    else if (direction.x === -1) rotation = 180;
+    else if (direction.y === -1) rotation = -90;
+    else if (direction.y === 1) rotation = 90;
+    head.style.transform = `rotate(${rotation}deg)`;
+}
+
+// ===== CHECK COLLISIONS =====
+function checkCollisions() {
+    if (isProcessing) return; // Cegah double trigger
+    
+    const head = snake[0];
+    const headRect = {
+        x: head.x,
+        y: head.y,
+        w: SEGMENT_SIZE,
+        h: SEGMENT_SIZE
+    };
+
+    const options = document.querySelectorAll('.arabic-option');
+    options.forEach(option => {
+        if (isProcessing) return;
+        
+        const optRect = {
+            x: parseInt(option.style.left),
+            y: parseInt(option.style.top),
+            w: option.offsetWidth,
+            h: option.offsetHeight
+        };
+
+        if (isColliding(headRect, optRect)) {
+            handleAnswer(option);
+        }
+    });
+}
+
+function isColliding(r1, r2) {
+    return !(r1.x + r1.w < r2.x || 
+             r1.x > r2.x + r2.w || 
+             r1.y + r1.h < r2.y || 
+             r1.y > r2.y + r2.h);
+}
+
+// ===== HANDLE ANSWER - LANGSUNG LANJUT KE SOAL BERIKUTNYA =====
+function handleAnswer(option) {
+    if (isProcessing || !gameActive) return;
+    isProcessing = true; // Kunci agar tidak double trigger
+
+    const isSelectedCorrect = option.dataset.correct === 'true';
+    const feedback = document.getElementById('feedbackOverlay');
+    const feedbackText = document.getElementById('feedbackText');
+    const feedbackSub = document.getElementById('feedbackSub');
+
+    if (isSelectedCorrect) {
+        // ✅ BENAR - skor bertambah
+        option.classList.add('correct-flash');
+        score += 12.5;
+        correctCount++;
+        feedbackText.textContent = '✅ BENAR!';
+        feedbackSub.textContent = `Hebat! Jawabanmu tepat! (${correctCount} benar)`;
+        feedback.className = 'feedback-overlay show correct';
+    } else {
+        // ❌ SALAH - tetap lanjut, tidak dapat skor
+        option.classList.add('wrong-flash');
+        wrongCount++;
+        
+        // Tampilkan jawaban yang benar
+        document.querySelectorAll('.arabic-option').forEach(opt => {
+            if (opt.dataset.correct === 'true') {
+                opt.classList.add('correct-flash');
+            }
+        });
+        
+        feedbackText.textContent = '❌ KURANG TEPAT!';
+        feedbackSub.textContent = `Jawaban benar: ${currentQuestion.arabic} | Lanjut soal berikutnya...`;
+        feedback.className = 'feedback-overlay show wrong';
+    }
+
+    document.getElementById('scoreDisplay').textContent = `⭐ Skor: ${Math.round(score)}`;
+
+    // Setelah 2 detik, langsung lanjut ke soal berikutnya (meski salah)
+    setTimeout(() => {
+        feedback.className = 'feedback-overlay';
+        nextRound(); // Langsung lanjut ke ronde berikutnya
+    }, 2000);
+}
+
+// ===== END GAME =====
+function endGame() {
+    gameActive = false;
+    if (animationId) cancelAnimationFrame(animationId);
+
+    // Update progress bar 100%
+    document.getElementById('progressBar').style.width = '100%';
+
+    document.getElementById('gameScreen').classList.remove('active');
+    document.getElementById('resultScreen').classList.add('active');
+
+    const finalScore = Math.round(score);
+    document.getElementById('finalScore').textContent = finalScore;
+    document.getElementById('resultName').textContent = ` ${studentName}`;
+
+    const scoreCircle = document.getElementById('scoreCircle');
+    let message = '';
+    
+    if (finalScore === 100) {
+        scoreCircle.className = 'score-circle perfect';
+        message = ' Sempurna! Kamu luar biasa hebat! Semua jawaban benar!';
+    } else if (finalScore >= 75) {
+        scoreCircle.className = 'score-circle good';
+        message = '👍 Bagus! Terus semangat belajar bahasa Arab!';
+    } else if (finalScore >= 50) {
+        scoreCircle.className = 'score-circle good';
+        message = '💪 Lumayan! Ayo coba lagi untuk hasil lebih baik!';
+    } else {
+        scoreCircle.className = 'score-circle low';
+        message = '📚 Jangan menyerah! Ayo belajar lebih giat lagi!';
+    }
+
+    document.getElementById('resultMessage').textContent = message;
+    document.getElementById('resultDetail').innerHTML = 
+        `✅ Jawaban benar: <strong>${correctCount}</strong> dari 8 soal<br>` +
+        `❌ Jawaban salah: <strong>${wrongCount}</strong> dari 8 soal<br>` +
+        `📊 Tingkat keberhasilan: <strong>${Math.round((correctCount/8)*100)}%</strong>`;
+
+    // Kirim ke Google Sheets
+    sendToGoogleSheets(studentName, finalScore, correctCount, wrongCount);
+}
+
+// ===== SEND TO GOOGLE SHEETS =====
+function sendToGoogleSheets(name, score, correct, wrong) {
+    const data = {
+        nama: name,
+        nilai: score,
+        jawaban_benar: correct,
+        jawaban_salah: wrong,
+        total_soal: 8,
+        persentase: Math.round((correct/8)*100) + '%',
+        tanggal: new Date().toLocaleString('id-ID')
+    };
+
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(() => {
+        document.getElementById('sendingIndicator').textContent = '✅ Nilai berhasil dikirim ke guru!';
+        document.getElementById('sendingIndicator').style.color = '#4caf50';
+    })
+    .catch(error => {
+        document.getElementById('sendingIndicator').textContent = '⚠️ Gagal mengirim nilai. Coba lagi.';
+        document.getElementById('sendingIndicator').style.color = '#f44336';
+        console.error('Error:', error);
+    });
+}
+
+// ===== RESET GAME =====
+function resetGame() {
+    document.getElementById('resultScreen').classList.remove('active');
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('studentName').value = '';
+    document.getElementById('sendingIndicator').textContent = '📤 Mengirim nilai...';
+    document.getElementById('sendingIndicator').style.color = '#667eea';
+    document.getElementById('progressBar').style.width = '0%';
+}
+
+// ===== KEYBOARD CONTROLS =====
+document.addEventListener('keydown', (e) => {
+    if (!gameActive || isProcessing) return;
+    
+    switch(e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+            e.preventDefault();
+            if (direction.y !== 1) nextDirection = { x: 0, y: -1 };
+            break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+            e.preventDefault();
+            if (direction.y !== -1) nextDirection = { x: 0, y: 1 };
+            break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+            e.preventDefault();
+            if (direction.x !== 1) nextDirection = { x: -1, y: 0 };
+            break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+            e.preventDefault();
+            if (direction.x !== -1) nextDirection = { x: 1, y: 0 };
+            break;
+    }
+});
+
+// ===== DIRECTION BUTTONS =====
+document.querySelectorAll('.dir-btn[data-dir]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (!gameActive || isProcessing) return;
+        const dir = btn.dataset.dir;
+        switch(dir) {
+            case 'up':
+                if (direction.y !== 1) nextDirection = { x: 0, y: -1 };
+                break;
+            case 'down':
+                if (direction.y !== -1) nextDirection = { x: 0, y: 1 };
+                break;
+            case 'left':
+                if (direction.x !== 1) nextDirection = { x: -1, y: 0 };
+                break;
+            case 'right':
+                if (direction.x !== -1) nextDirection = { x: 1, y: 0 };
+                break;
+        }
+    });
+});
+
+// ===== JOYSTICK CONTROL =====
+const joystick = document.getElementById('joystick');
+const knob = document.getElementById('joystickKnob');
+let isDragging = false;
+
+function handleJoystickMove(clientX, clientY) {
+    if (!isDragging || !gameActive || isProcessing) return;
+    
+    const rect = joystick.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const deltaX = clientX - centerX;
+    const deltaY = clientY - centerY;
+    const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 45);
+    const angle = Math.atan2(deltaY, deltaX);
+    
+    const knobX = Math.cos(angle) * distance;
+    const knobY = Math.sin(angle) * distance;
+    
+    knob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+    
+    if (distance > 15) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0 && direction.x !== -1) nextDirection = { x: 1, y: 0 };
+            else if (deltaX < 0 && direction.x !== 1) nextDirection = { x: -1, y: 0 };
+        } else {
+            if (deltaY > 0 && direction.y !== -1) nextDirection = { x: 0, y: 1 };
+            else if (deltaY < 0 && direction.y !== 1) nextDirection = { x: 0, y: -1 };
+        }
+    }
+}
+
+knob.addEventListener('mousedown', (e) => { isDragging = true; e.preventDefault(); });
+knob.addEventListener('touchstart', (e) => { isDragging = true; e.preventDefault(); });
+document.addEventListener('mousemove', (e) => handleJoystickMove(e.clientX, e.clientY));
+document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+});
+document.addEventListener('mouseup', () => { isDragging = false; knob.style.transform = 'translate(-50%, -50%)'; });
+document.addEventListener('touchend', () => { isDragging = false; knob.style.transform = 'translate(-50%, -50%)'; });
+
+// Handle resize
+window.addEventListener('resize', () => {
+    if (gameActive && snake.length > 0) {
+        const arena = document.getElementById('gameArena');
+        const maxX = arena.offsetWidth - SEGMENT_SIZE;
+        const maxY = arena.offsetHeight - SEGMENT_SIZE;
+        snake.forEach(seg => {
+            seg.x = Math.min(seg.x, maxX);
+            seg.y = Math.min(seg.y, maxY);
+        });
+    }
+});
+
+// Enter key to start
+document.getElementById('studentName').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') startGame();
+});
+</script>
+
+</body>
+</html>
